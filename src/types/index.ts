@@ -5,8 +5,8 @@ export interface MpesaAPIConfig {
   publicKey: string;
   serviceProviderCode: string;
   origin: string;
-  apiHost?: string; // Opcional, definido automaticamente pelo ambiente
-  timeout?: number; // Request timeout in ms
+  apiHost?: string;
+  timeout?: number; // request timeout in ms
   environment?: "sandbox" | "live";
 }
 
@@ -30,9 +30,7 @@ export interface MpesaAccessTokenResponse extends MpesaBaseResponse {
   output_TokenExpiry: string; // In seconds
 }
 
-export interface MpesaCustomerToBusinessResponse extends MpesaBaseResponse {
-  // CustomerToBusiness Single Stage specific fields (as per M-Pesa docs, if any beyond base)
-}
+export interface MpesaCustomerToBusinessResponse extends MpesaBaseResponse {}
 
 export interface MpesaBusinessToCustomerResponse extends MpesaBaseResponse {
   output_Amount?: string;
@@ -59,7 +57,6 @@ export interface MpesaBusinessToBusinessResponse extends MpesaBaseResponse {
   output_SettlementAmount?: string;
 }
 
-// --- M-Pesa API Request Payloads ---
 export type CustomerToBusinessRequestBody = {
   input_Amount: string;
   input_CustomerMSISDN: string;
@@ -100,7 +97,6 @@ export type BusinessToBusinessRequestBody = {
   input_PaymentServices: string; // Ex: "BusinessToBusinessTransfer"
 };
 
-// --- Respostas Simplificadas e Legíveis ---
 export type MpesaResponse<T = any> = {
   status: "success" | "error";
   message: string;
@@ -163,7 +159,6 @@ export type ReversalResponseData = {
   reversalAmount: string;
 };
 
-// --- Argumentos dos métodos ---
 export type CustomerToBusinessParams = {
   amount: number;
   number: string; // MSISDN
