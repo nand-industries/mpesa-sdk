@@ -1,4 +1,4 @@
-import type { MpesaResponseCode } from "./types";
+import type { MpesaBaseResponse, MpesaResponseCode } from "./types";
 
 type FriendlyError = {
   code: MpesaResponseCode;
@@ -6,7 +6,7 @@ type FriendlyError = {
   message: string;
 };
 
-export const FRIENDLY_ERRORS: Record<MpesaResponseCode, FriendlyError> = {
+export const mpesa_errors: Record<MpesaResponseCode, FriendlyError> = {
   "INS-0": {
     code: "INS-0",
     category: "system",
@@ -173,3 +173,23 @@ export const FRIENDLY_ERRORS: Record<MpesaResponseCode, FriendlyError> = {
     message: "The language code used is not supported.",
   },
 };
+
+export const errors = {
+  unexpected: {
+    message: "An unexpected error occurred.",
+  },
+  not_found: {
+    message: "The requested resource was not found.",
+  },
+  forbidden: {
+    message: "You are not allowed to perform this operation.",
+  },
+  unauthorized: {
+    message: "You are not authorized to perform this operation.",
+  },
+  network: {
+    message: "The request took too long. Try again.",
+  },
+};
+
+export function parseMpesaError(error: unknown): MpesaBaseResponse | string {}
