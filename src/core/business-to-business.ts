@@ -1,34 +1,32 @@
-import { checkSuccessCode } from "../constants";
-import type { BusinessToBusinessParams, BusinessToBusinessRequestBody, MpesaBusinessToBusinessResponse, Result } from "../types";
-import { Fetcher } from "./fetcher";
+import { Fetcher } from "~/core/fetcher";
+import { mpesa_errors } from "~/error";
+import { BusinessToBusinessParams, BusinessToBusinessRequestBody, MpesaBaseResponse, MpesaBusinessToBusinessResponse } from "~/types";
 
-export class BusinessToBusiness extends Fetcher {
-  protected readonly BASE_PATH = "/ipg/v1x/b2bPayment/singleStage/";
+import { err, MapResult } from "~/types/result";
 
-  public async process(params: BusinessToBusinessParams): Promise<Result<MpesaBusinessToBusinessResponse>> {
+export const businessToBusiness = (fetcher: Fetcher) => {
+  const path = "/ipg/v1x/b2bPayment/singleStage/";
+  type Response = MapResult<MpesaBusinessToBusinessResponse, MpesaBaseResponse | string>;
+
+  return async (params: BusinessToBusinessParams): Promise<Response> => {
     const requestBody: BusinessToBusinessRequestBody = {
       input_Amount: params.amount.toFixed(2),
       input_PrimaryPartyCode: params.primaryPartyCode,
       input_RecipientPartyCode: params.recipientPartyCode,
       input_ThirdPartyReference: params.thirdPartyReference,
       input_TransactionReference: params.transactionReference,
-      input_ServiceProviderCode: this.serviceProviderCode,
-      input_PaymentServices: params.paymentServices || "BusinessToBusinessTransfer",
+      input_ServiceProviderCode: "",
+      // input_ServiceProviderCode: this.serviceProviderCode,
+      input_PaymentServices: params.paymentServices || "",
     };
 
-    try {
-      const { data, error } = await this._post<MpesaBusinessToBusinessResponse>(this.BASE_PATH, requestBody);
-      if (error) return { data: null, error };
+    const result = await fetcher.post<MpesaBusinessToBusinessResponse>(path, requestBody);
 
-      if (!data?.output_ResponseCode) {
-        return { data: null, error: "no data returned from the server" };
-      }
-
-      if (checkSuccessCode(data.output_ResponseCode)) return { data, error: null };
-
-      return { error: data, data: null };
-    } catch (error) {
-      return { data: null, error: "unable to fetch data. the request could not be resolved." };
+    if (result.err) return { err: result.err };
+    if (result.ok) {
+      const error = mpesa_errors[result.ok.output_ResponseCode];
+      if (error) return err(error);
     }
-  }
-}
+    return { err: result.err };
+  };
+};
