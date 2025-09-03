@@ -1,67 +1,68 @@
-import { type MpesaBaseResponse, type Result } from "../types";
+import { parseMpesaError } from "~/error";
+import { MpesaBaseResponse } from "~/types";
+import { err, ok, Result } from "~/types/result";
 
-export abstract class Fetcher {
-  protected abstract BASE_PATH: string;
-  protected readonly baseUrl: string;
-  protected readonly headers: Headers;
-  protected readonly serviceProviderCode: string;
-  constructor(baseUrl: string, headers: Headers, serviceProviderCode: string) {
-    this.baseUrl = baseUrl;
-    this.serviceProviderCode = serviceProviderCode;
-    this.headers = headers;
-  }
+type RequestOptions = {
+  url: string;
+  method: RequestInit["method"];
+  headers?: Headers;
+  body?: unknown;
+};
 
-  protected replaceParams(path: string, params: Record<string, string>): string {
-    let result = path;
-    Object.entries(params).forEach(([key, value]) => {
-      result = result.replace(`{${key}}`, value);
-    });
-    return result;
-  }
-
-  private async request<T>(method: string, path: string, body?: unknown): Promise<Result<T>> {
+async function request<T>(options: RequestOptions): Promise<Result<T, MpesaBaseResponse | string>> {
+  try {
+    const body = options.body ? JSON.stringify(options.body) : undefined;
     const requestOptions: RequestInit = {
-      method,
-      headers: this.headers,
-      body: body ? JSON.stringify(body) : undefined,
+      method: options.method,
+      headers: options.headers,
+      body,
     };
+    const response = await fetch(options.url, requestOptions);
 
-    try {
-      const response = await fetch(`${this.baseUrl}${path}`, requestOptions);
-
-      if (!response.ok) {
-        const rawError = await response.text();
-        return { data: null, error: JSON.parse(rawError) as MpesaBaseResponse };
-      }
-
-      const data = (await response.json()) as any;
-      return { data, error: null };
-    } catch (error) {
-      return {
-        data: null,
-        error: "unable to fetch data. the request could not be resolved.",
-      };
+    if (!response.ok) {
+      const rawError = await response.text();
+      const error = JSON.parse(rawError) as MpesaBaseResponse;
+      return err(error);
     }
-  }
 
-  protected async _get<T>(path: string, queryParams?: Record<string, string>) {
-    const queryString = queryParams ? `?${new URLSearchParams(queryParams).toString()}` : "";
-    return this.request<T>("GET", `${path}${queryString}`);
-  }
-
-  protected async _post<T>(path: string, body: unknown) {
-    return this.request<T>("POST", path, body);
-  }
-
-  protected async _put<T>(path: string, body: unknown) {
-    return this.request<T>("PUT", path, body);
-  }
-
-  protected async _patch<T>(path: string, body: unknown) {
-    return this.request<T>("PATCH", path, body);
-  }
-
-  protected async _delete<T>(path: string) {
-    return this.request<T>("DELETE", path);
+    const data = await response.json();
+    return ok(data);
+  } catch (e) {
+    return err(parseMpesaError(e));
   }
 }
+
+type FeacherOptions = {
+  baseUrl: string;
+  headers?: Headers;
+};
+
+export function fetcher(options: FeacherOptions) {
+  function get<T>(path: string, method: RequestInit["method"], body?: unknown): Promise<Result<T, MpesaBaseResponse | string>> {
+    const absulute = `${options.baseUrl}${path}`;
+    return request({ url: absulute, method, body, headers: options.headers });
+  }
+  function post<T>(path: string, body: unknown): Promise<Result<T, MpesaBaseResponse | string>> {
+    const absulute = `${options.baseUrl}${path}`;
+    return request({ url: absulute, method: "POST", body, headers: options.headers });
+  }
+
+  function put<T>(path: string, body: unknown): Promise<Result<T, MpesaBaseResponse | string>> {
+    const absulute = `${options.baseUrl}${path}`;
+    return request({ url: absulute, method: "PUT", body, headers: options.headers });
+  }
+
+  function _delete<T>(path: string): Promise<Result<T, MpesaBaseResponse | string>> {
+    const absulute = `${options.baseUrl}${path}`;
+    return request({ url: absulute, method: "DELETE", headers: options.headers });
+  }
+
+  return {
+    get,
+    post,
+    put,
+    delete: _delete,
+  };
+}
+
+export type Fetcher = ReturnType<typeof fetcher>;
