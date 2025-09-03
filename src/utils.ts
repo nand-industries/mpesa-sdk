@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import { constants, publicEncrypt } from "node:crypto";
 import type { MpesaAPIConfig } from "./types";
 
 export function encodePublicKeyToBase64(publicKey: string): string {
@@ -9,9 +9,9 @@ export function generateBearerToken(apiKey: string, publicKey: string): string {
   const buffer = Buffer.from(apiKey, "utf8");
   const rsa = {
     key: publicKey,
-    padding: crypto.constants.RSA_PKCS1_PADDING,
+    padding: constants.RSA_PKCS1_PADDING,
   };
-  const encrypted = crypto.publicEncrypt(rsa, buffer);
+  const encrypted = publicEncrypt(rsa, buffer);
   return encrypted.toString("base64");
 }
 
