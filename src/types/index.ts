@@ -20,10 +20,10 @@ export interface MpesaBaseResponse {
   output_ThirdPartyReference?: string;
 }
 
-export type Result<T> = {
-  data: T | null;
-  error: MpesaBaseResponse | string | null;
-};
+// export type Result<T> = {
+//   data: T | null;
+//   error: MpesaBaseResponse | string | null;
+// };
 
 export interface MpesaAccessTokenResponse extends MpesaBaseResponse {
   output_Token: string;
